@@ -52,6 +52,8 @@ HRESULT CSampleCredential::Initialize(
 	__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
 	__in const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* rgcpfd,
 	__in const FIELD_STATE_PAIR* rgfsp
+	//__in PCWSTR pwzUsername,
+	//__in PCWSTR pwzPassword
 )
 {
 	HRESULT hr = S_OK;
@@ -65,15 +67,16 @@ HRESULT CSampleCredential::Initialize(
 		_rgFieldStatePairs[i] = rgfsp[i];
 		hr = FieldDescriptorCopy(rgcpfd[i], &_rgCredProvFieldDescriptors[i]);
 	}
-
+	// здесь прописать имена и параметры множественного входа
 	// Initialize the String value of all the fields.
 	if (SUCCEEDED(hr))
 	{
-		hr = SHStrDupW(USERNAME, &_rgFieldStrings[SFI_USERNAME]);
+		//проверить, можно ли вытянуть эти параметры без других аргументов
+		hr = SHStrDupW(L"Submit", &_rgFieldStrings[SFI_USERNAME]);
 	}
 	if (SUCCEEDED(hr))
 	{
-		hr = SHStrDupW(PASSWORD, &_rgFieldStrings[SFI_PASSWORD]);
+		hr = SHStrDupW(L"", &_rgFieldStrings[SFI_PASSWORD]);
 	}
 	if (SUCCEEDED(hr))
 	{

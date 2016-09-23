@@ -19,7 +19,6 @@
 #include "common.h"
 #include "dll.h"
 #include "resource.h"
-#include "CommandWindow.h"
 
 class CSampleCredential : public ICredentialProviderCredential
 {
@@ -83,12 +82,12 @@ class CSampleCredential : public ICredentialProviderCredential
                                 __out CREDENTIAL_PROVIDER_STATUS_ICON* pcpsiOptionalStatusIcon);
 
   public:
-	  HRESULT Initialize(__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
-		  __in const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* rgcpfd,
-		  __in const FIELD_STATE_PAIR* rgfsp
-		  //__in PCWSTR pwzUsername,
-		  //__in PCWSTR pwzPassword = NULL
-		  );
+    HRESULT Initialize(__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
+                       __in const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* rgcpfd,
+                       __in const FIELD_STATE_PAIR* rgfsp,
+                       __in PCWSTR pwzUsername,
+                       __in PCWSTR pwzPassword = NULL);
+
     CSampleCredential();
 
     virtual ~CSampleCredential();
@@ -98,17 +97,17 @@ class CSampleCredential : public ICredentialProviderCredential
 
     CREDENTIAL_PROVIDER_USAGE_SCENARIO    _cpus; // The usage scenario for which we were enumerated.
 
-    CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR  _rgCredProvFieldDescriptors[SFI_NUM_FIELDS];  // An array holding the type 
-                                                                                        // and name of each field in 
-                                                                                        // the tile.
+    CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR  _rgCredProvFieldDescriptors[SFI_NUM_FIELDS]; // An array holding the type and 
+                                                                                       // name of each field in the tile.
 
-    FIELD_STATE_PAIR                      _rgFieldStatePairs[SFI_NUM_FIELDS];           // An array holding the state 
-                                                                                        // of each field in the tile.
-
-    PWSTR                                 _rgFieldStrings[SFI_NUM_FIELDS];              // An array holding the string 
-                                                                                        // value of each field. This is 
-                                                                                        // different from the name of 
-                                                                                        // the field held in 
-                                                                                        // _rgCredProvFieldDescriptors.
+    FIELD_STATE_PAIR                      _rgFieldStatePairs[SFI_NUM_FIELDS];          // An array holding the state of 
+                                                                                       // each field in the tile.
+    
+    PWSTR                                 _rgFieldStrings[SFI_NUM_FIELDS];             // An array holding the string 
+                                                                                       // value of each field. This is 
+                                                                                       // different from the name of 
+                                                                                       // the field held in 
+                                                                                       // _rgCredProvFieldDescriptors.
     ICredentialProviderCredentialEvents* _pCredProvCredentialEvents;                  
+
 };
