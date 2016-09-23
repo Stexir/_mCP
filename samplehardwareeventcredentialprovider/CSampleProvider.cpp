@@ -109,7 +109,7 @@ HRESULT CSampleProvider::SetUsageScenario(
 							hr = _pCredential->Initialize(_cpus, s_rgCredProvFieldDescriptors, s_rgFieldStatePairs);
 							if (SUCCEEDED(hr))
 							{
-								hr = _pMessageCredential->Initialize(s_rgMessageCredProvFieldDescriptors, s_rgMessageFieldStatePairs, L"Smartcard");
+								hr = _pMessageCredential->Initialize(s_rgMessageCredProvFieldDescriptors, s_rgMessageFieldStatePairs, L"Войти по смарт-карте");
 							}
 						}
 					}

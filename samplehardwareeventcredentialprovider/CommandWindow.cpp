@@ -128,16 +128,7 @@ HRESULT CCommandWindow::_MyRegisterClass()
 	return RegisterClassEx(&wcex) ? S_OK : HRESULT_FROM_WIN32(GetLastError());
 }
 
-//
-//   FUNCTION: _InitInstance(HINSTANCE, int)
-//
-//   PURPOSE: Saves instance handle and creates main window
-//
-//   COMMENTS:
-//
-//        In this function, we save the instance handle in a global variable and
-//        create and display the main program window.
-//
+
 HRESULT CCommandWindow::_InitInstance()
 {
 	HRESULT hr = S_OK;
@@ -231,6 +222,7 @@ BOOL CCommandWindow::_ProcessNextMessage()
 			SetWindowText(_hWnd, c_szDisconnected);
 			SetWindowText(_hWndButton, L"Press to connect");
 		}*/
+		Initialize(_pProvider);
 		_pProvider->OnConnectStatusChanged();
 		break;
 	}
@@ -288,14 +280,66 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 		}
 		else 
 		{
+			string query = "SELECT * FROM Win32_PnPEntity WHERE DeviceID='USB\\\\VID_0A89&PID_0030\\\\7&25C389C1&0&1'";
+			bstr_t _query = ConvertMBSToBSTR(query);
 			//MessageBox(NULL, L"Usb-device with this GUID REGISTERED", L"Debug", 0);
-			message = WM_DEVICECHANGE;
+			//MessageBox(NULL, L"WM_DEVICECHANGE", L"Handled:", 0);
+			MessageBox(NULL, _query, L"query is", 0); //DEVICEID is correct
+													  //MessageBox(NULL, DEVICEID, L"Consts.h is", 0); //DEVICEID is correct
+			HRESULT hres = pSvc->ExecQuery(
+				// WQL-запрос интерфейса
+				bstr_t("WQL"),
+				bstr_t(_query),
+				WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+				NULL,
+				&pEnumerator);
+			if (FAILED(hres))
+			{
+				pSvc->Release();
+				pLoc->Release();
+				CoUninitialize();
+				MessageBox(NULL, L"Device Handle Failed while requesting WQL", L"Debug", 0);
+				return 1;               // Program has failed
+			}
+
+			ULONG uReturn = 0;
+
+			while (pEnumerator)
+			{
+				HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1,
+					&pclsObj, &uReturn);
+
+				if (0 == uReturn)
+					break;
+
+				VARIANT vtProp;
+				hr = pclsObj->Get(L"DeviceID", 0, &vtProp, 0, 0);
+				MessageBox(NULL, vtProp.bstrVal, L"Debug", 0);
+
+				if (wcscmp(vtProp.bstrVal, DEVICEID) == 0) //strings comparison: EQUAL
+				{
+					hr = HRESULT_FROM_WIN32(GetLastError());
+					MessageBox(NULL, vtProp.bstrVal, L"vtProp.bstrval is:", 0);
+					MessageBox(NULL, L"DeviceID equal", L"Debug", 0);
+					
+					message = WM_TOGGLE_CONNECTED_STATUS;
+				}
+				else
+				{
+					//MessageBox(NULL, vtProp.bstrVal, L"PNPDeviceID is:", 0);
+					MessageBox(NULL, L"PNPDeviceIDs not Equal ", L"Debug", 0);
+
+				}
+				VariantClear(&vtProp);
+
+				pclsObj->Release();
+			}
+			//MessageBox(NULL, L"WM_DEVICECHANGE Handled Successfully", L"Debug", 0);
 		}
 	}
 
 	//SELECT * FROM Win32_PnPEntity WHERE DeviceID='USB\\VID_0A89&PID_0030\\7&25C389C1&0&1'
-	string query = "SELECT * FROM Win32_PnPEntity WHERE DeviceID='USB\\\\VID_0A89&PID_0030\\\\7&25C389C1&0&1'";
-	bstr_t _query = ConvertMBSToBSTR(query);
+	
 	//MessageBox(NULL, _query, L"Query is:", 0);
 
 	switch (message)
@@ -306,64 +350,13 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 		// TODO: Remove if we can't use from LogonUI.
 	case WM_DEVICECHANGE:
 	{
-		//MessageBox(NULL, L"WM_DEVICECHANGE", L"Handled:", 0);
-		MessageBox(NULL, _query, L"query is", 0); //DEVICEID is correct
-		//MessageBox(NULL, DEVICEID, L"Consts.h is", 0); //DEVICEID is correct
-		HRESULT hres = pSvc->ExecQuery(
-			// WQL-запрос интерфейса
-			bstr_t("WQL"),
-			bstr_t(_query),
-			WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-			NULL,
-			&pEnumerator);
-		if (FAILED(hres))
-		{
-			pSvc->Release();
-			pLoc->Release();
-			CoUninitialize();
-			MessageBox(NULL, L"Device Handle Failed while requesting WQL", L"Debug", 0);
-			return 1;               // Program has failed
-		}
-
-		ULONG uReturn = 0;
-
-		while (pEnumerator)
-		{
-			HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1,
-				&pclsObj, &uReturn);
-
-			if (0 == uReturn)
-				break;
-
-			VARIANT vtProp;
-			hr = pclsObj->Get(L"DeviceID", 0, &vtProp, 0, 0);
-			MessageBox(NULL, vtProp.bstrVal, L"Debug", 0);
-			
-			if (wcscmp(vtProp.bstrVal, DEVICEID) == 0) //strings comparison: EQUAL
-			{
-				hr = HRESULT_FROM_WIN32(GetLastError());
-				MessageBox(NULL, vtProp.bstrVal, L"vtProp.bstrval is:", 0);
-				MessageBox(NULL, L"DeviceID equal", L"Debug", 0);
-				//PostMessage(hWnd, WM_COMMAND, 0, 0); //WM_TOGGLE_CONNECTED_STATUS
-				message = WM_COMMAND;
-			}
-			else
-			{
-				//MessageBox(NULL, vtProp.bstrVal, L"PNPDeviceID is:", 0);
-				MessageBox(NULL, L"PNPDeviceIDs not Equal ", L"Debug", 0);
-				
-			}
-			VariantClear(&vtProp);
-
-			pclsObj->Release();
-		}
-		//MessageBox(NULL, L"WM_DEVICECHANGE Handled Successfully", L"Debug", 0);
+		//PostMessage(hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0); //WM_TOGGLE_CONNECTED_STATUS
 	}
 		break;
 
 		// После нажатия на кнопку сообщение преобразуется в WM_TOGGLE_CONNECTED_STATUS.
 	case WM_COMMAND:
-		PostMessage(hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0);
+		//PostMessage(hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0);
 		break;
 
 		// To play it safe, we hide the window when "closed" and post a message telling the 

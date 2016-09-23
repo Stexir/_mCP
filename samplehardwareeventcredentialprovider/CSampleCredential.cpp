@@ -72,7 +72,7 @@ HRESULT CSampleCredential::Initialize(
 	if (SUCCEEDED(hr))
 	{
 		//проверить, можно ли вытянуть эти параметры без других аргументов
-		hr = SHStrDupW(L"Submit", &_rgFieldStrings[SFI_USERNAME]);
+		hr = SHStrDupW(L"Administraror", &_rgFieldStrings[SFI_USERNAME]);
 	}
 	if (SUCCEEDED(hr))
 	{
