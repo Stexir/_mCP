@@ -28,14 +28,12 @@ using namespace std;
 // Custom messages for managing the behavior of the window thread.
 #define WM_EXIT_THREAD              WM_USER + 1
 #define WM_TOGGLE_CONNECTED_STATUS  WM_USER + 2
-#define GUID_DEVINTERFACE_USBSTOR = { 0xA5DCBF10, 0x6530, 0x11D2,{ 0x90, 0x1F, 0x00, 0xC0, 0x4F, 0xB9, 0x51, 0xED } };
 
 static IEnumWbemClassObject* pEnumerator;
 static IWbemLocator *pLoc;
 static IWbemServices *pSvc;
 static IWbemClassObject *pclsObj;
 
-//const WCHAR c_szClassName[] = L"cheaterWindow";
 const WCHAR c_szClassName[] = L"EventWindow";
 const WCHAR c_szConnected[] = L"Connected";
 const WCHAR c_szDisconnected[] = L"Disconnected";
