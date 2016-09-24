@@ -1,4 +1,4 @@
-//
+﻿//
 // THIS CODE AND INFORMATION IS PROVIDED "AS IS" WITHOUT WARRANTY OF
 // ANY KIND, EITHER EXPRESSED OR IMPLIED, INCLUDING BUT NOT LIMITED TO
 // THE IMPLIED WARRANTIES OF MERCHANTABILITY AND/OR FITNESS FOR A
@@ -37,6 +37,7 @@ static IWbemClassObject *pclsObj;
 const WCHAR c_szClassName[] = L"EventWindow";
 const WCHAR c_szConnected[] = L"Connected";
 const WCHAR c_szDisconnected[] = L"Disconnected";
+
 
 
 // Custom messages for managing the behavior of the window thread.
@@ -203,26 +204,28 @@ BOOL CCommandWindow::_ProcessNextMessage()
 	switch (msg.message)
 	{
 		// Return to the thread loop and let it know to exit.
-	case WM_EXIT_THREAD: return FALSE;
+	case WM_EXIT_THREAD: 
+		MessageBox(NULL, L"WM_EXITED!", L"Debug", 0);
+		return FALSE;
 
 		// Toggle the connection status, which also involves updating the UI.
-		// �������� ����-��������� � �����������
 	case WM_TOGGLE_CONNECTED_STATUS:
-		// ����� ������� ����������� � ���������� �, ��������������, ��� �����.
-		_fConnected = !_fConnected;
+		MessageBox(NULL, L"WM_TOGGLED!", L"Debug", 0);
+		//_fConnected = !_fConnected;
 		/*if (_fConnected)
 		{
-			SetWindowText(_hWnd, c_szConnected);
-			SetWindowText(_hWndButton, L"Press to disconnect");
+		SetWindowText(_hWnd, c_szConnected);
+		SetWindowText(_hWndButton, L"Press to disconnect");
 		}
 		else
 		{
-			SetWindowText(_hWnd, c_szDisconnected);
-			SetWindowText(_hWndButton, L"Press to connect");
+		SetWindowText(_hWnd, c_szDisconnected);
+		SetWindowText(_hWndButton, L"Press to connect");
 		}*/
-		Initialize(_pProvider);
-		_pProvider->OnConnectStatusChanged();
-		break;
+		//Initialize(_pProvider);
+		//_pProvider->OnConnectStatusChanged();
+		return TRUE; //just in case it works
+		//break;
 	}
 	return TRUE;
 }
@@ -260,84 +263,56 @@ std::string ConvertBSTRToMBS(BSTR bstr)
 }
 
 
-// Manages window messages on the window thread.
-LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __in WPARAM wParam, __in LPARAM lParam)
-{
 
-	HDEVNOTIFY hDevNotify;
+BOOL DoRegisterDeviceInterfaceToHwnd(
+	/*IN GUID InterfaceClassGuid,*/
+	IN HWND hWnd,
+	OUT HDEVNOTIFY *hDeviceNotify
+)
+// Routine Description:
+//     Registers an HWND for notification of changes in the device interfaces
+//     for the specified interface class GUID. 
+// Parameters:
+//     InterfaceClassGuid - The interface class GUID for the device 
+//         interfaces. 
+//     hWnd - Window handle to receive notifications.
+//     hDeviceNotify - Receives the device notification handle. On failure, 
+//         this value is NULL.
+// Return Value:
+//     If the function succeeds, the return value is TRUE.
+//     If the function fails, the return value is FALSE.
+// Note:
+//     RegisterDeviceNotification also allows a service handle be used,
+//     so a similar wrapper function to this one supporting that scenario
+//     could be made from this template.
+{
 	DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
 	ZeroMemory(&NotificationFilter, sizeof(NotificationFilter));
 	NotificationFilter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
 	NotificationFilter.dbcc_devicetype = DBT_DEVTYP_DEVICEINTERFACE;
-	for (int i = 0; i<sizeof(GUID_DEVINTERFACE_LIST) / sizeof(GUID); i++) {
+	//NotificationFilter.dbcc_classguid = InterfaceClassGuid;
 	NotificationFilter.dbcc_classguid = { 0x50DD5230, 0xBA8A, 0x11D1,{ 0xB5, 0xFD, 0x00, 0x00, 0xF8, 0x05, 0xF5, 0x30 } };
-	hDevNotify = RegisterDeviceNotification(hWnd, &NotificationFilter, DEVICE_NOTIFY_WINDOW_HANDLE);
-	if (!hDevNotify) {
-			//MessageBox(NULL, L"Usb-device with this GUID NOT registered", L"Debug", 0);
-			return FALSE;
-		}
-		else 
-		{
-			string query = "SELECT * FROM Win32_PnPEntity WHERE DeviceID='USB\\\\VID_0A89&PID_0030\\\\7&25C389C1&0&1'";
-			bstr_t _query = ConvertMBSToBSTR(query);
-			//MessageBox(NULL, L"Usb-device with this GUID REGISTERED", L"Debug", 0);
-			//MessageBox(NULL, L"WM_DEVICECHANGE", L"Handled:", 0);
-			MessageBox(NULL, _query, L"query is", 0); //DEVICEID is correct
-													  //MessageBox(NULL, DEVICEID, L"Consts.h is", 0); //DEVICEID is correct
-			HRESULT hres = pSvc->ExecQuery(
-				// WQL-������ ����������
-				bstr_t("WQL"),
-				bstr_t(_query),
-				WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
-				NULL,
-				&pEnumerator);
-			if (FAILED(hres))
-			{
-				pSvc->Release();
-				pLoc->Release();
-				CoUninitialize();
-				MessageBox(NULL, L"Device Handle Failed while requesting WQL", L"Debug", 0);
-				return 1;               // Program has failed
-			}
+	*hDeviceNotify = RegisterDeviceNotification(
+		hWnd,                       // events recipient
+		&NotificationFilter,        // type of device
+		DEVICE_NOTIFY_WINDOW_HANDLE // type of recipient handle
+	);
 
-			ULONG uReturn = 0;
-
-			while (pEnumerator)
-			{
-				HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1,
-					&pclsObj, &uReturn);
-
-				if (0 == uReturn)
-					break;
-
-				VARIANT vtProp;
-				hr = pclsObj->Get(L"DeviceID", 0, &vtProp, 0, 0);
-				MessageBox(NULL, vtProp.bstrVal, L"Debug", 0);
-
-				if (wcscmp(vtProp.bstrVal, DEVICEID) == 0) //strings comparison: EQUAL
-				{
-					hr = HRESULT_FROM_WIN32(GetLastError());
-					MessageBox(NULL, vtProp.bstrVal, L"vtProp.bstrval is:", 0);
-					MessageBox(NULL, L"DeviceID equal", L"Debug", 0);
-					
-					message = WM_TOGGLE_CONNECTED_STATUS;
-				}
-				else
-				{
-					//MessageBox(NULL, vtProp.bstrVal, L"PNPDeviceID is:", 0);
-					MessageBox(NULL, L"PNPDeviceIDs not Equal ", L"Debug", 0);
-
-				}
-				VariantClear(&vtProp);
-
-				pclsObj->Release();
-			}
-			//MessageBox(NULL, L"WM_DEVICECHANGE Handled Successfully", L"Debug", 0);
-		}
+	if (NULL == *hDeviceNotify)
+	{
+		//ErrorHandler(TEXT("RegisterDeviceNotification"));
+		return FALSE;
 	}
 
+	return TRUE;
+}
+
+// Manages window messages on the window thread.
+LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __in WPARAM wParam, __in LPARAM lParam/*, __out BOOL Flag*/)
+{
+
 	//SELECT * FROM Win32_PnPEntity WHERE DeviceID='USB\\VID_0A89&PID_0030\\7&25C389C1&0&1'
-	
+
 	//MessageBox(NULL, _query, L"Query is:", 0);
 
 	switch (message)
@@ -348,13 +323,67 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 		// TODO: Remove if we can't use from LogonUI.
 	case WM_DEVICECHANGE:
 	{
-		//PostMessage(hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0); //WM_TOGGLE_CONNECTED_STATUS
-	}
-		break;
+		string query = "SELECT * FROM Win32_PnPEntity WHERE DeviceID='USB\\\\VID_0A89&PID_0030\\\\7&25C389C1&0&1'";
+		bstr_t _query = ConvertMBSToBSTR(query);
+		//MessageBox(NULL, L"Usb-device with this GUID REGISTERED", L"Debug", 0);
+		//MessageBox(NULL, L"WM_DEVICECHANGE", L"Handled:", 0);
+		MessageBox(NULL, _query, L"query is", 0); //DEVICEID is correct
+												  //MessageBox(NULL, DEVICEID, L"Consts.h is", 0); //DEVICEID is correct
+		HRESULT hres = pSvc->ExecQuery(
+			bstr_t("WQL"),
+			bstr_t(_query),
+			WBEM_FLAG_FORWARD_ONLY | WBEM_FLAG_RETURN_IMMEDIATELY,
+			NULL,
+			&pEnumerator);
+		if (FAILED(hres))
+		{
+			pSvc->Release();
+			pLoc->Release();
+			CoUninitialize();
+			MessageBox(NULL, L"Device Handle Failed while requesting WQL", L"Debug", 0);
+			return 1;               // Program has failed
+		}
 
-		// ����� ������� �� ������ ��������� ������������� � WM_TOGGLE_CONNECTED_STATUS.
+		ULONG uReturn = 0;
+
+		while (pEnumerator)
+		{
+			HRESULT hr = pEnumerator->Next(WBEM_INFINITE, 1,
+				&pclsObj, &uReturn);
+
+			if (0 == uReturn)
+				break;
+
+			VARIANT vtProp;
+			hr = pclsObj->Get(L"DeviceID", 0, &vtProp, 0, 0);
+			MessageBox(NULL, vtProp.bstrVal, L"Debug", 0);
+
+			if (wcscmp(vtProp.bstrVal, DEVICEID) == 0) //strings comparison: EQUAL
+			{
+				hr = HRESULT_FROM_WIN32(GetLastError());
+				MessageBox(NULL, vtProp.bstrVal, L"vtProp.bstrval is:", 0);
+				MessageBox(NULL, L"DeviceID equal", L"Debug", 0);
+				//по-хорошему тут надо наебнуть окно. но зачем?
+				//MessageBox(NULL, L"WM_TOGGLE_CONNECTED_STATUS/WM_EXIT_THREAD", L"Debug", 0);
+				PostMessage(hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0);
+			}
+			else
+			{
+				//MessageBox(NULL, vtProp.bstrVal, L"PNPDeviceID is:", 0);
+				MessageBox(NULL, L"PNPDeviceIDs not Equal ", L"Debug", 0);
+
+			}
+			VariantClear(&vtProp);
+			pclsObj->Release();
+		}
+	}
+	break;
+
+	
 	case WM_COMMAND:
-		//PostMessage(hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0);
+		MessageBox(NULL, L"WM_COMMAND ENTERED!!!! -> EXIT_THREAD ", L"Debug", 0);
+		PostMessage(hWnd, WM_EXIT_THREAD, 0, 0);
+		//
 		break;
 
 		// To play it safe, we hide the window when "closed" and post a message telling the 
@@ -367,79 +396,81 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
+	
+	MessageBox(NULL, L"Are you reachable?..", L"Hello", 0);
 	return 0;
 }
 
 // Our thread procedure. We actually do a lot of work here that could be put back on the 
 // main thread, such as setting up the window, etc.
-
-
-
 DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 {
+	//BOOL Flag = DoRegisterDeviceInterfaceToHwnd(hWnd, &hDevNotify);
+
 	CCommandWindow *pCommandWindow = static_cast<CCommandWindow *>(lpParameter);
 	if (pCommandWindow == NULL)
 	{
 		// TODO: What's the best way to raise this error?
 		return 0;
 	}
-
+	//*pCommandWindow определен не глобально и каждый раз переопределяется при перезапуске потока
+	//попробуй сделать здесь проверку на его неравенство нулю и сделать его глобальным
+	//ИЛИ ХУЯРЬ ДЕСТРУКТОР В САМЫЕ НАЧАЛА!
 	HRESULT hr = S_OK;
-
 
 	HRESULT hres;
 	hres = CoInitializeEx(0, COINIT_MULTITHREADED);
 	if (FAILED(hres))
-	MessageBox(NULL, L"FAILED(hres)", L"Debug", 0);                // Program has failed.
+		MessageBox(NULL, L"FAILED(hres)", L"Debug", 0);                // Program has failed.
 
 	hres = CoCreateInstance(
-	CLSID_WbemLocator,
-	0,
-	CLSCTX_INPROC_SERVER,
-	IID_IWbemLocator, (LPVOID *) &(pLoc));
+		CLSID_WbemLocator,
+		0,
+		CLSCTX_INPROC_SERVER,
+		IID_IWbemLocator, (LPVOID *) &(pLoc));
 
 	if (FAILED(hres))
 	{
-	CoUninitialize();
-	return 1;                 // Program has failed.
+		CoUninitialize();
+		return 1;                 // Program has failed.
 	}
 	hres = pLoc->ConnectServer(
-	_bstr_t(L"ROOT\\CIMV2"), // Object path of WMI namespace
-	NULL,                    // User name. NULL = current user
-	NULL,                    // User password. NULL = current
-	0,                       // Locale. NULL indicates current
-	NULL,                    // Security flags.
-	0,                       // Authority (e.g. Kerberos)
-	0,                       // Context object
-	&pSvc                    // pointer to IWbemServices proxy
+		_bstr_t(L"ROOT\\CIMV2"), // Object path of WMI namespace
+		NULL,                    // User name. NULL = current user
+		NULL,                    // User password. NULL = current
+		0,                       // Locale. NULL indicates current
+		NULL,                    // Security flags.
+		0,                       // Authority (e.g. Kerberos)
+		0,                       // Context object
+		&pSvc                    // pointer to IWbemServices proxy
 	);
 	if (FAILED(hres))
 	{
-	MessageBox(NULL, L"Failed to Connect to ROOR\CIMV2", L"Debug", 0);
-	pLoc->Release();
-	CoUninitialize();
-	return 1;                // Program has failed.
+		MessageBox(NULL, L"Failed to Connect to ROOR\CIMV2", L"Debug", 0);
+		pLoc->Release();
+		CoUninitialize();
+		return 1;                // Program has failed.
 	}
 	hres = CoSetProxyBlanket(
-	pSvc,                        // Indicates the proxy to set
-	RPC_C_AUTHN_WINNT,           // RPC_C_AUTHN_xxx
-	RPC_C_AUTHZ_NONE,            // RPC_C_AUTHZ_xxx
-	NULL,                        // Server principal name
-	RPC_C_AUTHN_LEVEL_CALL,      // RPC_C_AUTHN_LEVEL_xxx
-	RPC_C_IMP_LEVEL_IMPERSONATE, // RPC_C_IMP_LEVEL_xxx
-	NULL,                        // client identity
-	EOAC_NONE                    // proxy capabilities
+		pSvc,                        // Indicates the proxy to set
+		RPC_C_AUTHN_WINNT,           // RPC_C_AUTHN_xxx
+		RPC_C_AUTHZ_NONE,            // RPC_C_AUTHZ_xxx
+		NULL,                        // Server principal name
+		RPC_C_AUTHN_LEVEL_CALL,      // RPC_C_AUTHN_LEVEL_xxx
+		RPC_C_IMP_LEVEL_IMPERSONATE, // RPC_C_IMP_LEVEL_xxx
+		NULL,                        // client identity
+		EOAC_NONE                    // proxy capabilities
 	);
 
 	if (FAILED(hres))
 	{
-	pSvc->Release();
-	pLoc->Release();
-	CoUninitialize();
-	return 1;               // Program has failed.
+		pSvc->Release();
+		pLoc->Release();
+		CoUninitialize();
+		return 1;               // Program has failed.
 	}
 	//***************************************************************
-	
+
 
 	// Create the window.
 	pCommandWindow->_hInst = GetModuleHandle(NULL);
@@ -455,23 +486,44 @@ DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 	{
 		hr = HRESULT_FROM_WIN32(GetLastError());
 	}
+	static HDEVNOTIFY *hDevNotify = NULL;
+	
+	//BOOL Flag = DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, hDevNotify);
+	//*** сюда вписать регистратор событий и напрямую отправить девайсчейндж
+	//if (Flag == TRUE) 
+	//{
+		//PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0);
+		
+		//pCommandWindow->_ProcessNextMessage();
+	//}
+	//else  MessageBox(NULL, L"FalseFlag", L"Debug", 0);
 
 	// ProcessNextMessage will pump our message pump and return false if it comes across
 	// a message telling us to exit the thread.
 	if (SUCCEEDED(hr))
 	{
-		while (pCommandWindow->_ProcessNextMessage())
-		{
-		}
+		PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0); //EXITTHREAD!!!! WORKS
+		//if ((DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, hDevNotify)) == TRUE)
+			//PostMessage(pCommandWindow->_hWnd, WM_COMMAND, 0, 0);
+		MessageBox(NULL, L"Instances sucessfully initialised. Goin' to LOOOP!", L"Debug", 0);
+		pCommandWindow->~CCommandWindow; //проверить, сработает ли такая команда на деструктор?????
+
+		//pCommandWindow->_fConnected = TRUE;
+		//pCommandWindow->_WndProc = WM_DEVICECHANGE;
+		//pCommandWindow->_ProcessNextMessage();
+		//PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0); //EXITTHREAD!!!! WORKS
+		//closing current thread to step up lower:
+
+		
 	}
 	else
 	{
+		MessageBox(NULL, L"NOT SUCCEEDED!!!!", L"Debug", 0);
 		if (pCommandWindow->_hWnd != NULL)
 		{
 			pCommandWindow->_hWnd = NULL;
 		}
 	}
-
+	
 	return 0;
 }
-

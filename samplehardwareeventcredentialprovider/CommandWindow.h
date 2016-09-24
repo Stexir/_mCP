@@ -30,7 +30,7 @@ private:
     BOOL _ProcessNextMessage();
     
     static DWORD WINAPI _ThreadProc(__in LPVOID lpParameter);
-    static LRESULT CALLBACK    _WndProc(__in HWND hWnd, __in UINT message, __in WPARAM wParam, __in LPARAM lParam);
+    static LRESULT CALLBACK    _WndProc(__in HWND hWnd, __in UINT message, __in WPARAM wParam, __in LPARAM lParam/*, __out BOOL Flag*/);
     
     CSampleProvider            *_pProvider;        // Pointer to our owner.
     HWND                        _hWnd;             // Handle to our window.

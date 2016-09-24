@@ -59,7 +59,9 @@ HRESULT CSampleCredential::Initialize(
 	HRESULT hr = S_OK;
 
 	_cpus = cpus;
-
+	//PasswordProvider ->{6f45dc1e-5384-457a-bc13-2cd81b0d28ed}
+	//GenericProvider {25CBB996-92ED-457e-B28C-4774084BD562}
+	//{8841d728-1a76-4682-bb6f-a9ea53b4b3ba} LogonPasswordReset
 	// Copy the field descriptors for each field. This is useful if you want to vary the field
 	// descriptors based on what Usage scenario the credential was created for.
 	for (DWORD i = 0; SUCCEEDED(hr) && i < ARRAYSIZE(_rgCredProvFieldDescriptors); i++)
@@ -72,7 +74,7 @@ HRESULT CSampleCredential::Initialize(
 	if (SUCCEEDED(hr))
 	{
 		//проверить, можно ли вытянуть эти параметры без других аргументов
-		hr = SHStrDupW(L"Administraror", &_rgFieldStrings[SFI_USERNAME]);
+		hr = SHStrDupW(L"evgen", &_rgFieldStrings[SFI_USERNAME]);
 	}
 	if (SUCCEEDED(hr))
 	{
