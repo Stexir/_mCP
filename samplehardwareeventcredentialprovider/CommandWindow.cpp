@@ -204,7 +204,7 @@ BOOL CCommandWindow::_ProcessNextMessage()
 	switch (msg.message)
 	{
 		// Return to the thread loop and let it know to exit.
-	case WM_EXIT_THREAD: 
+	case WM_EXIT_THREAD:
 		MessageBox(NULL, L"WM_EXITED!", L"Debug", 0);
 		return FALSE;
 
@@ -225,7 +225,7 @@ BOOL CCommandWindow::_ProcessNextMessage()
 		//Initialize(_pProvider);
 		//_pProvider->OnConnectStatusChanged();
 		return TRUE; //just in case it works
-		//break;
+					 //break;
 	}
 	return TRUE;
 }
@@ -379,7 +379,7 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 	}
 	break;
 
-	
+
 	case WM_COMMAND:
 		MessageBox(NULL, L"WM_COMMAND ENTERED!!!! -> EXIT_THREAD ", L"Debug", 0);
 		PostMessage(hWnd, WM_EXIT_THREAD, 0, 0);
@@ -396,7 +396,7 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 	default:
 		return DefWindowProc(hWnd, message, wParam, lParam);
 	}
-	
+
 	MessageBox(NULL, L"Are you reachable?..", L"Hello", 0);
 	return 0;
 }
@@ -487,14 +487,14 @@ DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 		hr = HRESULT_FROM_WIN32(GetLastError());
 	}
 	static HDEVNOTIFY *hDevNotify = NULL;
-	
+
 	//BOOL Flag = DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, hDevNotify);
 	//*** сюда вписать регистратор событий и напрямую отправить девайсчейндж
 	//if (Flag == TRUE) 
 	//{
-		//PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0);
-		
-		//pCommandWindow->_ProcessNextMessage();
+	//PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0);
+
+	//pCommandWindow->_ProcessNextMessage();
 	//}
 	//else  MessageBox(NULL, L"FalseFlag", L"Debug", 0);
 
@@ -503,18 +503,19 @@ DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 	if (SUCCEEDED(hr))
 	{
 		PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0); //EXITTHREAD!!!! WORKS
-		//if ((DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, hDevNotify)) == TRUE)
-			//PostMessage(pCommandWindow->_hWnd, WM_COMMAND, 0, 0);
+																  //if ((DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, hDevNotify)) == TRUE)
+																  //PostMessage(pCommandWindow->_hWnd, WM_COMMAND, 0, 0);
+		pCommandWindow->_ProcessNextMessage();
 		MessageBox(NULL, L"Instances sucessfully initialised. Goin' to LOOOP!", L"Debug", 0);
-		pCommandWindow->~CCommandWindow; //проверить, сработает ли такая команда на деструктор?????
+		//pCommandWindow->~CCommandWindow; //проверить, сработает ли такая команда на деструктор?????
 
-		//pCommandWindow->_fConnected = TRUE;
-		//pCommandWindow->_WndProc = WM_DEVICECHANGE;
-		//pCommandWindow->_ProcessNextMessage();
-		//PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0); //EXITTHREAD!!!! WORKS
-		//closing current thread to step up lower:
+										 //pCommandWindow->_fConnected = TRUE;
+										 //pCommandWindow->_WndProc = WM_DEVICECHANGE;
+										 //pCommandWindow->_ProcessNextMessage();
+										 //PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0); //EXITTHREAD!!!! WORKS
+										 //closing current thread to step up lower:
 
-		
+
 	}
 	else
 	{
@@ -524,6 +525,6 @@ DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 			pCommandWindow->_hWnd = NULL;
 		}
 	}
-	
+
 	return 0;
 }
