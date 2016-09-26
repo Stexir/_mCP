@@ -226,7 +226,14 @@ BOOL CCommandWindow::_ProcessNextMessage()
 		//_pProvider->OnConnectStatusChanged();
 		return TRUE; //just in case it works
 					 //break;
+
+	case WM_DEVICECHANGE:
+		MessageBox(NULL, L"DEVICECHANGE HANDLED!", L"Success!", 0);
+		return TRUE;
 	}
+	//not reacable <- return in each cause!
+	//since processing next message handled nothing, next line is reachable!
+	MessageBox(NULL, L"You are reachable!!!", L"Debug", 0);
 	return TRUE;
 }
 
@@ -502,9 +509,11 @@ DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 	// a message telling us to exit the thread.
 	if (SUCCEEDED(hr))
 	{
-		PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0); //EXITTHREAD!!!! WORKS
+		PostMessage(pCommandWindow->_hWnd, WM_COMMAND, 0, 0); //EXITTHREAD!!!! WORKS
+
 																  //if ((DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, hDevNotify)) == TRUE)
 																  //PostMessage(pCommandWindow->_hWnd, WM_COMMAND, 0, 0);
+		//close here to process next message. Trying to stay without it. / change to TOGGLE CONECTED STATUS is LOOP case.
 		pCommandWindow->_ProcessNextMessage();
 		MessageBox(NULL, L"Instances sucessfully initialised. Goin' to LOOOP!", L"Debug", 0);
 		//pCommandWindow->~CCommandWindow; //проверить, сработает ли такая команда на деструктор?????
