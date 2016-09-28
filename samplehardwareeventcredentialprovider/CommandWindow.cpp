@@ -194,8 +194,6 @@ BOOL CCommandWindow::_ProcessNextMessage()
 	TranslateMessage(&(msg));
 	DispatchMessage(&(msg));
 
-
-
 	// This section performs some "post-processing" of the message. It's easier to do these
 	// things here because we have the handles to the window, its button, and the provider
 	// handy.
@@ -225,9 +223,7 @@ BOOL CCommandWindow::_ProcessNextMessage()
 		return TRUE; //just in case it works
 					 //break;
 
-	case WM_DEVICECHANGE:
-		MessageBox(NULL, L"DEVICECHANGE HANDLED!", L"Success!", 0);
-		return TRUE;
+
 	}
 	//not reacable <- return in each cause!
 	//since processing next message handled nothing, next line is reachable!
@@ -272,7 +268,7 @@ std::string ConvertBSTRToMBS(BSTR bstr)
 BOOL DoRegisterDeviceInterfaceToHwnd(
 	/*IN GUID InterfaceClassGuid,*/
 	IN HWND _hWnd,
-	OUT HDEVNOTIFY *hDeviceNotify
+	IN HDEVNOTIFY *hDeviceNotify
 )
 // Routine Description:
 //     Registers an HWND for notification of changes in the device interfaces
@@ -291,6 +287,7 @@ BOOL DoRegisterDeviceInterfaceToHwnd(
 //     so a similar wrapper function to this one supporting that scenario
 //     could be made from this template.
 {
+	//int i = 0;
 	DEV_BROADCAST_DEVICEINTERFACE NotificationFilter;
 	ZeroMemory(&NotificationFilter, sizeof(NotificationFilter));
 	NotificationFilter.dbcc_size = sizeof(DEV_BROADCAST_DEVICEINTERFACE);
@@ -302,31 +299,20 @@ BOOL DoRegisterDeviceInterfaceToHwnd(
 		&NotificationFilter,        // type of device
 		DEVICE_NOTIFY_WINDOW_HANDLE // type of recipient handle
 	);
-	//может, луп просходит здесь...
-	if (NULL == *hDeviceNotify)
+
+	if (*hDeviceNotify == NULL)
 	{
-		PostMessage(_hWnd, WM_EXIT_THREAD, 0, 0);
 		//ErrorHandler(TEXT("RegisterDeviceNotification"));
 		return FALSE;
-	}
+	} 
 	else
-	{
-		PostMessage(_hWnd, WM_EXIT_THREAD, 0, 0);
-		return FALSE;
-	}
+		return TRUE;
 
-	return TRUE;
 }
 
 // Manages window messages on the window thread.
-LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __in WPARAM wParam, __in LPARAM lParam/*, __out BOOL Flag*/)
+LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __in WPARAM wParam, __in LPARAM lParam)
 {
-	static HDEVNOTIFY *hDevNotify = NULL;
-	MessageBox(NULL, L"hDevNotify created. Registering...", L"Debug", 0);
-
-	//SELECT * FROM Win32_PnPEntity WHERE DeviceID='USB\\VID_0A89&PID_0030\\7&25C389C1&0&1'
-
-	//MessageBox(NULL, _query, L"Query is:", 0);
 
 	switch (message)
 	{
@@ -338,8 +324,6 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 	{
 		string query = "SELECT * FROM Win32_PnPEntity WHERE DeviceID='USB\\\\VID_0A89&PID_0030\\\\7&25C389C1&0&1'";
 		bstr_t _query = ConvertMBSToBSTR(query);
-		//MessageBox(NULL, L"Usb-device with this GUID REGISTERED", L"Debug", 0);
-		//MessageBox(NULL, L"WM_DEVICECHANGE", L"Handled:", 0);
 		MessageBox(NULL, _query, L"query is", 0); //DEVICEID is correct
 												  //MessageBox(NULL, DEVICEID, L"Consts.h is", 0); //DEVICEID is correct
 		HRESULT hres = pSvc->ExecQuery(
@@ -354,7 +338,7 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 			pLoc->Release();
 			CoUninitialize();
 			MessageBox(NULL, L"Device Handle Failed while requesting WQL", L"Debug", 0);
-			return 1;               // Program has failed
+			return 0;               // Program has failed. 1!
 		}
 
 		ULONG uReturn = 0;
@@ -376,9 +360,8 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 				hr = HRESULT_FROM_WIN32(GetLastError());
 				MessageBox(NULL, vtProp.bstrVal, L"vtProp.bstrval is:", 0);
 				MessageBox(NULL, L"DeviceID equal", L"Debug", 0);
-				//по-хорошему тут надо наебнуть окно. но зачем?
-				//MessageBox(NULL, L"WM_TOGGLE_CONNECTED_STATUS/WM_EXIT_THREAD", L"Debug", 0);
-				PostMessage(hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0);
+				message = WM_TOGGLE_CONNECTED_STATUS;
+				PostMessage(hWnd, message, 0, 0);
 			}
 			else
 			{
@@ -392,13 +375,8 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 	}
 	break;
 
-
 	case WM_COMMAND:
 		MessageBox(NULL, L"WM_COMMAND ENTERED!!!! -> EXIT_THREAD ", L"Debug", 0);
-		//пробуем зафиксировать луп здесь.
-		
-		DoRegisterDeviceInterfaceToHwnd(hWnd, hDevNotify);
-		// сотри это к черту, если опять уйдем в бесконечность
 		PostMessage(hWnd, WM_EXIT_THREAD, 0, 0);
 		//
 		break;
@@ -406,6 +384,7 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 		// To play it safe, we hide the window when "closed" and post a message telling the 
 		// thread to exit.
 	case WM_CLOSE:
+		MessageBox(NULL, L"WM_CLOSE ENTERED!!!! -> EXIT_THREAD ", L"Debug", 0);
 		ShowWindow(hWnd, SW_HIDE);
 		PostMessage(hWnd, WM_EXIT_THREAD, 0, 0);
 		break;
@@ -422,23 +401,17 @@ LRESULT CALLBACK CCommandWindow::_WndProc(__in HWND hWnd, __in UINT message, __i
 // main thread, such as setting up the window, etc.
 DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 {
-	//BOOL Flag = DoRegisterDeviceInterfaceToHwnd(hWnd, &hDevNotify);
-
 	CCommandWindow *pCommandWindow = static_cast<CCommandWindow *>(lpParameter);
 	if (pCommandWindow == NULL)
 	{
 		// TODO: What's the best way to raise this error?
 		return 0;
 	}
-
-	
 	//*pCommandWindow определен не глобально и каждый раз переопределяется при перезапуске потока
 	//попробуй сделать здесь проверку на его неравенство нулю и сделать его глобальным
 	//ИЛИ ХУЯРЬ ДЕСТРУКТОР В САМЫЕ НАЧАЛА!
 	HRESULT hr = S_OK;
-	
-	HRESULT killerswitch;
-	// ***************** здесь отдельная работа с hres, лезь и не переинициализруй тут ничего.
+
 	HRESULT hres;
 	hres = CoInitializeEx(0, COINIT_MULTITHREADED);
 	if (FAILED(hres))
@@ -492,7 +465,9 @@ DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 	}
 	//***************************************************************
 
+	
 
+	//*****************************************************************
 	// Create the window.
 	pCommandWindow->_hInst = GetModuleHandle(NULL);
 	if (pCommandWindow->_hInst != NULL)
@@ -501,6 +476,7 @@ DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 		if (SUCCEEDED(hr))
 		{
 			hr = pCommandWindow->_InitInstance();
+
 		}
 	}
 	else
@@ -509,40 +485,30 @@ DWORD WINAPI CCommandWindow::_ThreadProc(__in LPVOID lpParameter)
 	}
 	
 
-	//BOOL Flag = DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, hDevNotify); //удивительно, почему эта функция уходит в луп... оставь
-	//здесь, чтобы иметь в виду.
-
-			
-	//Не вписывай сюда ничего. Максимум задержку.
-	
-
 	// ProcessNextMessage will pump our message pump and return false if it comes across
 	// a message telling us to exit the thread.
 	if (SUCCEEDED(hr))
 	{
-		 
-		//PostMessage(pCommandWindow->_hWnd, WM_DEVICECHANGE, 0, 0); //COMMAND!!!! WORKS В этом случае ты идешь в подпроцесс
-		PostMessage(pCommandWindow->_hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0); // в этом...в _WndProc
+		BOOL Flag = FALSE;
+		while (Flag == FALSE)
+		{
+			Flag = DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, pCommandWindow->hDevNotify);
+			if (Flag == TRUE)
+			{
+				PostMessage(pCommandWindow->_hWnd, WM_DEVICECHANGE, 0, 0);// in _WndProc. Successful. Fix redrawing.
+				//PostMessage(pCommandWindow->_hWnd, WM_TOGGLE_CONNECTED_STATUS, 0, 0); //still WndProc. how to switch to subprocess?..
+				//try to initiate from wnd first.
+				pCommandWindow->_ProcessNextMessage();
+				// WM_TOGGLE_CONNECTED_STATUS
 
-	
-		
+				break;
+			}
 
+		}
+		//I'll regret this...possibly.
 
-															  //if ((DoRegisterDeviceInterfaceToHwnd(pCommandWindow->_hWnd, hDevNotify)) == TRUE)
-															  //PostMessage(pCommandWindow->_hWnd, WM_COMMAND, 0, 0);
-															  //close here to process next message. Trying to stay without it. / change to TOGGLE CONECTED STATUS is LOOP case.
-		//pCommandWindow->_ProcessNextMessage(); // попробуем сейчас это убрать...
-		//
-		MessageBox(NULL, L"Instances sucessfully initialised. Goin' to LOOOP!", L"Debug", 0);
-		//pCommandWindow->~CCommandWindow; //проверить, сработает ли такая команда на деструктор?????
-
-		//pCommandWindow->_fConnected = TRUE;
-		//pCommandWindow->_WndProc = WM_DEVICECHANGE;
 		//pCommandWindow->_ProcessNextMessage();
-		//PostMessage(pCommandWindow->_hWnd, WM_EXIT_THREAD, 0, 0); //EXITTHREAD!!!! WORKS
-		//closing current thread to step up lower:
-
-
+		MessageBox(NULL, L"Instances sucessfully initialised. Goin' to LOOOP!", L"Debug", 0);
 	}
 	else
 	{
