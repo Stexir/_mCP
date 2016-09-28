@@ -28,7 +28,8 @@ private:
     HRESULT _MyRegisterClass();
     HRESULT _InitInstance();
     BOOL _ProcessNextMessage();
-    
+
+	BOOL DoRegisterDeviceInterfaceToHwnd(__in HWND hWnd, __in HDEVNOTIFY *hDeviceNotify);
     static DWORD WINAPI _ThreadProc(__in LPVOID lpParameter);
     static LRESULT CALLBACK    _WndProc(__in HWND hWnd, __in UINT message, __in WPARAM wParam, __in LPARAM lParam/*, __out BOOL Flag*/);
 
