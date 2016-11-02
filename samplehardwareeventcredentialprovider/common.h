@@ -20,28 +20,30 @@
 #define MAX_ULONG  ((ULONG)(-1))
 
 // The indexes of each of the fields in our credential provider's tiles.
-enum SAMPLE_FIELD_ID 
+enum SAMPLE_FIELD_ID
 {
-    SFI_TILEIMAGE       = 0,
-    SFI_USERNAME        = 1,
-    SFI_PASSWORD        = 2,
-    SFI_SUBMIT_BUTTON   = 3, 
-    SFI_NUM_FIELDS      = 4,  // Note: if new fields are added, keep NUM_FIELDS last.  This is used as a count of the number of fields
+	SFI_TILEIMAGE = 0,
+	SFI_FIMTITLE = 1,
+	SFI_USERNAME = 2,
+	SFI_PASSWORD = 3,
+	SFI_SUBMIT_BUTTON = 4,
+	SFI_SAMPLE = 5,
+	SFI_NUM_FIELDS = 6,
 };
 
 // Same as SAMPLE_FIELD_ID above, but for the CMessageCredential.
-enum SAMPLE_MESSAGE_FIELD_ID 
+enum SAMPLE_MESSAGE_FIELD_ID
 {
-    SMFI_MESSAGE        = 0, 
-    SMFI_NUM_FIELDS     = 1,  // Note: if new fields are added, keep NUM_FIELDS last.  This is used as a count of the number of fields
+	SMFI_MESSAGE = 0,
+	SMFI_NUM_FIELDS = 1,  // Note: if new fields are added, keep NUM_FIELDS last.  This is used as a count of the number of fields
 };
 
 // The first value indicates when the tile is displayed (selected, not selected)
 // the second indicates things like whether the field is enabled, whether it has key focus, etc.
 struct FIELD_STATE_PAIR
 {
-    CREDENTIAL_PROVIDER_FIELD_STATE cpfs;
-    CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE cpfis;
+	CREDENTIAL_PROVIDER_FIELD_STATE cpfs;
+	CREDENTIAL_PROVIDER_FIELD_INTERACTIVE_STATE cpfis;
 };
 
 // These two arrays are seperate because a credential provider might
@@ -51,18 +53,20 @@ struct FIELD_STATE_PAIR
 // The field state value indicates whether the field is displayed
 // in the selected tile, the deselected tile, or both.
 // The Field interactive state indicates when 
-static const FIELD_STATE_PAIR s_rgFieldStatePairs[] = 
+static const FIELD_STATE_PAIR s_rgFieldStatePairs[] =
 {
-    { CPFS_DISPLAY_IN_BOTH, CPFIS_NONE },                   // SFI_TILEIMAGE
-    { CPFS_DISPLAY_IN_BOTH, CPFIS_NONE },                   // SFI_USERNAME
-    { CPFS_DISPLAY_IN_SELECTED_TILE, CPFIS_FOCUSED },       // SFI_PASSWORD
-    { CPFS_DISPLAY_IN_SELECTED_TILE, CPFIS_NONE    },       // SFI_SUBMIT_BUTTON   
+	{ CPFS_DISPLAY_IN_BOTH,				  CPFIS_NONE }, // SFI_TILEIMAGE
+	{ CPFS_DISPLAY_IN_BOTH,				  CPFIS_NONE }, // SFI_FIMTITLE
+	{ CPFS_DISPLAY_IN_SELECTED_TILE,   	  CPFIS_FOCUSED }, // SFI_USERNAME
+	{ CPFS_DISPLAY_IN_SELECTED_TILE,	  CPFIS_FOCUSED }, // SFI_PASSWORD
+	{ CPFS_DISPLAY_IN_SELECTED_TILE,	  CPFIS_NONE }, // SFI_SUBMIT_BUTTON   
+	{ CPFS_DISPLAY_IN_SELECTED_TILE,	  CPFIS_NONE }, // SFI_SAMPLE   
 };
 
 // Same as s_rgFieldStatePairs above, but for the CMessageCredential.
-static const FIELD_STATE_PAIR s_rgMessageFieldStatePairs[] = 
+static const FIELD_STATE_PAIR s_rgMessageFieldStatePairs[] =
 {
-    { CPFS_DISPLAY_IN_BOTH, CPFIS_NONE },                   // SMFI_MESSAGE
+	{ CPFS_DISPLAY_IN_BOTH, CPFIS_NONE },                   // SMFI_MESSAGE
 };
 
 // Field descriptors for unlock and logon.
@@ -71,14 +75,16 @@ static const FIELD_STATE_PAIR s_rgMessageFieldStatePairs[] =
 // The third is the name of the field, NOT the value which will appear in the field.
 static const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR s_rgCredProvFieldDescriptors[] =
 {
-    { SFI_TILEIMAGE, CPFT_TILE_IMAGE, L"Image" },
-    { SFI_USERNAME, CPFT_LARGE_TEXT, L"Username" },
-    { SFI_PASSWORD, CPFT_PASSWORD_TEXT, L"Password" },
-    { SFI_SUBMIT_BUTTON, CPFT_SUBMIT_BUTTON, L"Submit" },
+	{ SFI_TILEIMAGE,     CPFT_TILE_IMAGE,    L"Image" }, // SFI_TILEIMAGE
+	{ SFI_FIMTITLE,      CPFT_LARGE_TEXT,    L"FIM Title" }, // SFI_FIMTITLE
+	{ SFI_USERNAME,      CPFT_EDIT_TEXT,     L"Username" }, // SFI_USERNAME
+	{ SFI_PASSWORD,		 CPFT_PASSWORD_TEXT, L"Password" }, // SFI_PASSWORD***
+	{ SFI_SUBMIT_BUTTON, CPFT_SUBMIT_BUTTON, L"Submit" }, // SFI_SUBMIT_BUTTON
+	{ SFI_SAMPLE,        CPFT_SMALL_TEXT,    L"Sample" }, // SFI_SAMPLE
 };
 
 // Same as s_rgCredProvFieldDescriptors above, but for the CMessageCredential.
 static const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR s_rgMessageCredProvFieldDescriptors[] =
 {
-    { SMFI_MESSAGE, CPFT_LARGE_TEXT, L"PleaseConnect" },
+	{ SMFI_MESSAGE, CPFT_LARGE_TEXT, L"PleaseConnect" },
 };

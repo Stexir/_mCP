@@ -46,14 +46,15 @@ CSampleCredential::~CSampleCredential()
 	DllRelease();
 }
 
+
 // Initializes one credential with the field information passed in.
 // Set the value of the SFI_USERNAME field to pwzUsername.
 HRESULT CSampleCredential::Initialize(
 	__in CREDENTIAL_PROVIDER_USAGE_SCENARIO cpus,
 	__in const CREDENTIAL_PROVIDER_FIELD_DESCRIPTOR* rgcpfd,
-	__in const FIELD_STATE_PAIR* rgfsp
-	//__in PCWSTR pwzUsername,
-	//__in PCWSTR pwzPassword
+	__in const FIELD_STATE_PAIR* rgfsp,
+	__in PCWSTR pwzUsername,
+	__in PCWSTR pwzPassword
 )
 {
 	HRESULT hr = S_OK;
@@ -71,22 +72,33 @@ HRESULT CSampleCredential::Initialize(
 	}
 	// здесь прописать имена и параметры множественного входа
 	// Initialize the String value of all the fields.
+
+	// Initialize the String values of all the fields.
 	if (SUCCEEDED(hr))
 	{
-		//проверить, можно ли вытянуть эти параметры без других аргументов
-		hr = SHStrDupW(L"evgen", &_rgFieldStrings[SFI_USERNAME]);
+		hr = SHStrDupW(L"Stex1", &_rgFieldStrings[SFI_FIMTITLE]); //SFI_FIMTITLE->pwzUsername, ?? ?? ???????, ??? ??? ??
 	}
 	if (SUCCEEDED(hr))
 	{
-		hr = SHStrDupW(L"", &_rgFieldStrings[SFI_PASSWORD]);
+		hr = SHStrDupW(pwzUsername ? pwzUsername : L"", &_rgFieldStrings[SFI_USERNAME]);
+	}
+	if (SUCCEEDED(hr))
+	{
+		hr = SHStrDupW(pwzPassword ? pwzPassword : L"", &_rgFieldStrings[SFI_PASSWORD]);
 	}
 	if (SUCCEEDED(hr))
 	{
 		hr = SHStrDupW(L"Submit", &_rgFieldStrings[SFI_SUBMIT_BUTTON]);
 	}
+	if (SUCCEEDED(hr))
+	{
+		hr = SHStrDupW(L"e.g. redmond\\aho or aho@ms.com", &_rgFieldStrings[SFI_SAMPLE]);
+	}
 
 	return S_OK;
 }
+
+
 
 // LogonUI calls this in order to give us a callback in case we need to notify it of anything.
 HRESULT CSampleCredential::Advise(

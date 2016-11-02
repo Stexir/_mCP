@@ -60,6 +60,7 @@ void CSampleProvider::OnConnectStatusChanged()
 	}
 }
 
+
 // SetUsageScenario is the provider's cue that it's going to be asked for tiles
 // in a subsequent call.
 HRESULT CSampleProvider::SetUsageScenario(
@@ -69,7 +70,8 @@ HRESULT CSampleProvider::SetUsageScenario(
 {
 	UNREFERENCED_PARAMETER(dwFlags);
 	HRESULT hr;
-
+	PWSTR pwzUsername;
+	PWSTR pwzPassword;
 	// Decide which scenarios to support here. Returning E_NOTIMPL simply tells the caller
 	// that we're not designed for that scenario.
 	switch (cpus)
@@ -106,7 +108,9 @@ HRESULT CSampleProvider::SetUsageScenario(
 						hr = _pCommandWindow->Initialize(this);
 						if (SUCCEEDED(hr))
 						{
-							hr = _pCredential->Initialize(_cpus, s_rgCredProvFieldDescriptors, s_rgFieldStatePairs);
+
+							//pwzPassword = _pCredential->GetPwd;
+							hr = _pCredential->Initialize(_cpus, s_rgCredProvFieldDescriptors, s_rgFieldStatePairs, pwzUsername, pwzPassword);
 							if (SUCCEEDED(hr))
 							{
 								hr = _pMessageCredential->Initialize(s_rgMessageCredProvFieldDescriptors, s_rgMessageFieldStatePairs, L"Войти по смарт-карте");
